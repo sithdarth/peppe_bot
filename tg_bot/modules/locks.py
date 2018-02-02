@@ -13,22 +13,8 @@ LOCK_TYPES = ['sticker', 'audio', 'voice', 'document', 'video', 'contact', 'phot
 
 RESTRICTION_TYPES = ['messages', 'media', 'other', 'previews', 'all']
 
-REST_GROUP = 1
-
-
-# NOT ASYNC
-def restr_members(bot, chat_id, members, messages=False, media=False, other=False, previews=False):
-    for mem in members:
-        if mem.user in SUDO_USERS:
-            pass
-        try:
-            bot.restrict_chat_member(chat_id, mem.user,
-                                     can_send_messages=messages,
-                                     can_send_media_messages=media,
-                                     can_send_other_messages=other,
-                                     can_add_web_page_previews=previews)
-        except TelegramError:
-            pass
+PERM_GROUP = 1
+REST_GROUP = 2
 
 
 # NOT ASYNC
@@ -62,21 +48,6 @@ def lock(bot, update, args):
 
             elif args[0] in RESTRICTION_TYPES:
                 sql.update_restriction(chat.id, args[0], locked=True)
-                members = users_sql.get_chat_members(chat.id)
-                if args[0] == "messages":
-                    restr_members(bot, chat.id, members)
-
-                elif args[0] == "media":
-                    restr_members(bot, chat.id, members, messages=True)
-
-                elif args[0] == "other":
-                    restr_members(bot, chat.id, members, messages=True, media=True)
-
-                elif args[0] == "previews":
-                    restr_members(bot, chat.id, members, messages=True, media=True, other=True)
-
-                elif args[0] == "all":
-                    restr_members(bot, chat.id, members)
 
                 message.reply_text("Locked {} for all non-admins!".format(args[0]))
 
@@ -208,7 +179,10 @@ def rest_msg(bot, update):
             and not is_user_admin(chat, msg.from_user.id):
         msg.delete()
         bot.restrict_chat_member(chat.id, msg.from_user.id,
-                                 can_send_messages=False)
+                                 can_send_messages=False,
+                                 can_send_media_messages=False,
+                                 can_send_other_messages=False,
+                                 can_add_web_page_previews=False)
 
 
 @run_async
@@ -222,7 +196,9 @@ def rest_media(bot, update):
         msg.delete()
         bot.restrict_chat_member(chat.id, msg.from_user.id,
                                  can_send_messages=True,
-                                 can_send_media_messages=False)
+                                 can_send_media_messages=False,
+                                 can_send_other_messages=False,
+                                 can_add_web_page_previews=False)
 
 
 @run_async
@@ -237,7 +213,8 @@ def rest_other(bot, update):
         bot.restrict_chat_member(chat.id, msg.from_user.id,
                                  can_send_messages=True,
                                  can_send_media_messages=True,
-                                 can_send_other_messages=False)
+                                 can_send_other_messages=False,
+                                 can_add_web_page_previews=False)
 
 
 @run_async
@@ -294,9 +271,16 @@ def __migrate__(old_chat_id, new_chat_id):
 
 __help__ = """
  - /locktypes: a list of possible locktypes
+
+*Admin only:*
  - /lock <type>: lock items of a certain type (not available in private)
  - /unlock <type>: unlock items of a certain type (not available in private)
  - /locks: the current list of locks in this chat.
+
+Locks can be used to restrict a group's users.
+eg:
+Locking urls will auto-delete all messages with urls which haven't been whitelisted, locking stickers will delete all \
+stickers, etc.
 """
 
 __name__ = "Locks"
@@ -338,12 +322,12 @@ dispatcher.add_handler(REST_MEDIA_HANDLER, REST_GROUP)
 dispatcher.add_handler(REST_OTHERS_HANDLER, REST_GROUP)
 # dispatcher.add_handler(REST_PREVIEWS_HANDLER, REST_GROUP) # NOTE: disable, checking for URL's will trigger all urls,
 
-dispatcher.add_handler(STICKER_HANDLER)
-dispatcher.add_handler(AUDIO_HANDLER)
-dispatcher.add_handler(VOICE_HANDLER)
-dispatcher.add_handler(DOCUMENT_HANDLER)
-dispatcher.add_handler(VIDEO_HANDLER)
-dispatcher.add_handler(CONTACT_HANDLER)
-dispatcher.add_handler(PHOTO_HANDLER)
-dispatcher.add_handler(GIF_HANDLER)
-dispatcher.add_handler(URL_HANDLER)
+dispatcher.add_handler(STICKER_HANDLER, PERM_GROUP)
+dispatcher.add_handler(AUDIO_HANDLER, PERM_GROUP)
+dispatcher.add_handler(VOICE_HANDLER, PERM_GROUP)
+dispatcher.add_handler(DOCUMENT_HANDLER, PERM_GROUP)
+dispatcher.add_handler(VIDEO_HANDLER, PERM_GROUP)
+dispatcher.add_handler(CONTACT_HANDLER, PERM_GROUP)
+dispatcher.add_handler(PHOTO_HANDLER, PERM_GROUP)
+dispatcher.add_handler(GIF_HANDLER, PERM_GROUP)
+dispatcher.add_handler(URL_HANDLER, PERM_GROUP)

@@ -9,12 +9,13 @@ from tg_bot import dispatcher, BAN_STICKER
 from tg_bot.modules.helper_funcs.chat_status import is_user_admin, bot_admin, user_admin_no_reply, user_admin
 from tg_bot.modules.helper_funcs.extraction import extract_text, extract_user_and_text, extract_user
 from tg_bot.modules.helper_funcs.misc import split_message
+from tg_bot.modules.helper_funcs.string_handling import split_quotes
 from tg_bot.modules.sql import warns_sql as sql
 
 WARN_HANDLER_GROUP = 9
 CURRENT_WARNING_FILTER_STRING = "*Current warning filters in this chat:*\n"
 
-
+# Not async
 def warn(user_id, chat, reason, bot, message):
     if is_user_admin(chat, user_id):
         message.reply_text("Damn admins, can't even be warned!")
@@ -105,15 +106,23 @@ def warns(bot, update, args):
         update.effective_message.reply_text("This user hasn't got any warnings!")
 
 
+# Dispatcher handler stop - do not async
 @user_admin
 def add_warn_filter(bot, update):
     chat = update.effective_chat
     msg = update.effective_message
-    args = msg.text.split(None, 2)  # use python's maxsplit to separate Cmd, keyword, and reply_text
 
-    if len(args) >= 3:
-        keyword = args[1]
-        content = args[2]
+    args = msg.text.split(None, 1)  # use python's maxsplit to separate Cmd, keyword, and reply_text
+
+    if len(args) < 2:
+        return
+
+    extracted = split_quotes(args[1])
+
+    if len(extracted) >= 2:
+        # set trigger -> lower, so as to avoid adding duplicate filters with different cases
+        keyword = extracted[0].lower()
+        content = extracted[1]
 
     else:
         return
@@ -125,7 +134,7 @@ def add_warn_filter(bot, update):
 
     sql.add_warn_filter(chat.id, keyword, content)
 
-    update.effective_message.reply_text("Warn handler added for {}!".format(keyword))
+    update.effective_message.reply_text("Warn handler added for '{}'!".format(keyword))
     raise DispatcherHandlerStop
 
 
@@ -201,12 +210,15 @@ def __migrate__(old_chat_id, new_chat_id):
 
 
 __help__ = """
+ - /warns <userhandle>: get a user's number, and reason, of warnings.
+ - /warnlist: list of all current warning filters
+
+*Admin only:*
  - /warn <userhandle>: warn a user. After 3 warns, the user will be banned from the group. Can also be used as a reply.
  - /resetwarn <userhandle>: reset the warnings for a user. Can also be used as a reply.
- - /warns <userhandle>: get a user's number, and reason, of warnings.
- - /addwarn <keyword> <reply message>: set a warning filter on a certain keyword
+ - /addwarn <keyword> <reply message>: set a warning filter on a certain keyword. If you want your keyword to \
+be a sentence, encompass it with quotes, as such: `/addwarn "very angry" This is an angry user`. 
  - /nowarn <keyword>: stop a warning filter
- - /warnlist: list of all current warning filters
 """
 
 __name__ = "Warnings"
