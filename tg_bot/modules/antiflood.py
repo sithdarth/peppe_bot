@@ -1,3 +1,6 @@
+from typing import Optional, List
+
+from telegram import Message, Chat, Update, Bot, User
 from telegram.error import BadRequest
 from telegram.ext import Filters, MessageHandler, CommandHandler, run_async
 
@@ -9,10 +12,13 @@ FLOOD_GROUP = 3
 
 
 @run_async
-def check_flood(bot, update):
-    user = update.effective_user
-    chat = update.effective_chat
-    message = update.effective_message
+def check_flood(bot: Bot, update: Update):
+    user = update.effective_user  # type: Optional[User]
+    chat = update.effective_chat  # type: Optional[Chat]
+    msg = update.effective_message  # type: Optional[Message]
+
+    if not user:  # ignore channels
+        return
 
     # ignore admins
     if is_user_admin(chat, user.id):
@@ -23,19 +29,20 @@ def check_flood(bot, update):
     if should_ban:
         try:
             chat.kick_member(user.id)
-            message.reply_text("I like to leave the flooding to natural disasters. But you, you were just a "
-                               "disappointment. Get out.")
+            msg.reply_text("I like to leave the flooding to natural disasters. But you, you were just a "
+                           "disappointment. Get out.")
 
         except BadRequest:
-            message.reply_text("I can't kick people here, give me permissions first!")
+            msg.reply_text("I can't kick people here, give me permissions first! Until then, I'll disable antiflood.")
+            sql.set_flood(chat.id, 0)
 
 
 @run_async
 @user_admin
 @can_restrict
-def set_flood(bot, update, args):
-    chat = update.effective_chat
-    message = update.effective_message
+def set_flood(bot: Bot, update: Update, args: List[str]):
+    chat = update.effective_chat  # type: Optional[Chat]
+    message = update.effective_message  # type: Optional[Message]
 
     if len(args) >= 1:
         val = args[0].lower()
@@ -61,8 +68,8 @@ def set_flood(bot, update, args):
 
 
 @run_async
-def flood(bot, update):
-    chat = update.effective_chat
+def flood(bot: Bot, update: Update):
+    chat = update.effective_chat  # type: Optional[Chat]
 
     flood_settings = sql.get_flood(chat.id)
     if not flood_settings or flood_settings.limit == 0:

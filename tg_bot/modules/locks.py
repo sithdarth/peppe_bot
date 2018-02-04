@@ -1,3 +1,6 @@
+from typing import Optional, List
+
+from telegram import Message, Chat, Update, Bot
 from telegram import TelegramError, MessageEntity
 from telegram.ext import CommandHandler, MessageHandler, Filters
 from telegram.ext.dispatcher import run_async
@@ -5,16 +8,31 @@ from telegram.ext.dispatcher import run_async
 import tg_bot.modules.sql.locks_sql as sql
 from tg_bot import dispatcher, SUDO_USERS
 from tg_bot.modules.helper_funcs.chat_status import can_delete, is_user_admin, user_not_admin, user_admin, \
-    bot_can_delete
+    bot_can_delete, is_bot_admin
 from tg_bot.modules.helper_funcs.cust_filters import CustomFilters
 from tg_bot.modules.sql import users_sql
 
-LOCK_TYPES = ['sticker', 'audio', 'voice', 'document', 'video', 'contact', 'photo', 'gif', 'url']
+LOCK_TYPES = ['sticker', 'audio', 'voice', 'document', 'video', 'contact', 'photo', 'gif', 'url', 'bots']
 
 RESTRICTION_TYPES = ['messages', 'media', 'other', 'previews', 'all']
 
 PERM_GROUP = 1
 REST_GROUP = 2
+
+
+# NOT ASYNC
+def restr_members(bot, chat_id, members, messages=False, media=False, other=False, previews=False):
+    for mem in members:
+        if mem.user in SUDO_USERS:
+            pass
+        try:
+            bot.restrict_chat_member(chat_id, mem.user,
+                                     can_send_messages=messages,
+                                     can_send_media_messages=media,
+                                     can_send_other_messages=other,
+                                     can_add_web_page_previews=previews)
+        except TelegramError:
+            pass
 
 
 # NOT ASYNC
@@ -31,15 +49,15 @@ def unrestr_members(bot, chat_id, members, messages=True, media=True, other=True
 
 
 @run_async
-def locktypes(bot, update):
+def locktypes(bot: Bot, update: Update):
     update.effective_message.reply_text("\n - ".join(["Locks: "] + LOCK_TYPES + RESTRICTION_TYPES))
 
 
 @user_admin
 @bot_can_delete
-def lock(bot, update, args):
-    chat = update.effective_chat
-    message = update.effective_message
+def lock(bot: Bot, update: Update, args: List[str]):
+    chat = update.effective_chat  # type: Optional[Chat]
+    message = update.effective_message  # type: Optional[Message]
     if can_delete(chat, bot.id):
         if len(args) >= 1:
             if args[0] in LOCK_TYPES:
@@ -48,6 +66,9 @@ def lock(bot, update, args):
 
             elif args[0] in RESTRICTION_TYPES:
                 sql.update_restriction(chat.id, args[0], locked=True)
+                if args[0] == "previews":
+                    members = users_sql.get_chat_members(str(chat.id))
+                    restr_members(bot, chat.id, members, messages=True, media=True, other=True)
 
                 message.reply_text("Locked {} for all non-admins!".format(args[0]))
 
@@ -60,9 +81,9 @@ def lock(bot, update, args):
 
 @run_async
 @user_admin
-def unlock(bot, update, args):
-    chat = update.effective_chat
-    message = update.effective_message
+def unlock(bot: Bot, update: Update, args: List[str]):
+    chat = update.effective_chat  # type: Optional[Chat]
+    message = update.effective_message  # type: Optional[Message]
     if is_user_admin(chat, message.from_user.id):
         if len(args) >= 1:
             if args[0] in LOCK_TYPES:
@@ -99,81 +120,93 @@ def unlock(bot, update, args):
 
 @run_async
 @user_not_admin
-def del_sticker(bot, update):
-    chat = update.effective_chat
+def del_sticker(bot: Bot, update: Update):
+    chat = update.effective_chat  # type: Optional[Chat]
     if sql.is_locked(chat.id, "sticker") and can_delete(chat, bot.id):
         update.effective_message.delete()
 
 
 @run_async
 @user_not_admin
-def del_audio(bot, update):
-    chat = update.effective_chat
+def del_audio(bot: Bot, update: Update):
+    chat = update.effective_chat  # type: Optional[Chat]
     if sql.is_locked(chat.id, "audio") and can_delete(chat, bot.id):
         update.effective_message.delete()
 
 
 @run_async
 @user_not_admin
-def del_voice(bot, update):
-    chat = update.effective_chat
+def del_voice(bot: Bot, update: Update):
+    chat = update.effective_chat  # type: Optional[Chat]
     if sql.is_locked(chat.id, "voice") and can_delete(chat, bot.id):
         update.effective_message.delete()
 
 
 @run_async
 @user_not_admin
-def del_document(bot, update):
-    chat = update.effective_chat
+def del_document(bot: Bot, update: Update):
+    chat = update.effective_chat  # type: Optional[Chat]
     if sql.is_locked(chat.id, "document") and can_delete(chat, bot.id):
         update.effective_message.delete()
 
 
 @run_async
 @user_not_admin
-def del_video(bot, update):
-    chat = update.effective_chat
+def del_video(bot: Bot, update: Update):
+    chat = update.effective_chat  # type: Optional[Chat]
     if sql.is_locked(chat.id, "video") and can_delete(chat, bot.id):
         update.effective_message.delete()
 
 
 @run_async
 @user_not_admin
-def del_contact(bot, update):
-    chat = update.effective_chat
+def del_contact(bot: Bot, update: Update):
+    chat = update.effective_chat  # type: Optional[Chat]
     if sql.is_locked(chat.id, "contact") and can_delete(chat, bot.id):
         update.effective_message.delete()
 
 
 @run_async
 @user_not_admin
-def del_photo(bot, update):
-    chat = update.effective_chat
+def del_photo(bot: Bot, update: Update):
+    chat = update.effective_chat  # type: Optional[Chat]
     if sql.is_locked(chat.id, "photo") and can_delete(chat, bot.id):
         update.effective_message.delete()
 
 
 @run_async
 @user_not_admin
-def del_gif(bot, update):
-    chat = update.effective_chat
+def del_gif(bot: Bot, update: Update):
+    chat = update.effective_chat  # type: Optional[Chat]
     if sql.is_locked(chat.id, "gif") and can_delete(chat, bot.id):
         update.effective_message.delete()
 
 
 @run_async
 @user_not_admin
-def del_url(bot, update):
-    chat = update.effective_chat
+def del_url(bot: Bot, update: Update):
+    chat = update.effective_chat  # type: Optional[Chat]
     if sql.is_locked(chat.id, "url") and can_delete(chat, bot.id):
         update.effective_message.delete()
 
 
 @run_async
 @user_not_admin
-def rest_msg(bot, update):
-    msg = update.effective_message
-    chat = update.effective_chat
+def remove_bot(bot: Bot, update: Update):
+    chat = update.effective_chat  # type: Optional[Chat]
+    if sql.is_locked(chat.id, "bots") and is_bot_admin(chat, bot.id):
+        new_members = update.effective_message.new_chat_members
+        for new_mem in new_members:
+            if new_mem.is_bot:
+                chat.kick_member(new_mem.id)
+                update.effective_message.reply_text("Only admins are allowed to add bots to this chat! Get outta here.")
+
+
+@run_async
+@user_not_admin
+def rest_msg(bot: Bot, update: Update):
+    msg = update.effective_message  # type: Optional[Message]
+    chat = update.effective_chat  # type: Optional[Chat]
     if sql.is_restr_locked(chat.id, "messages") \
             and can_delete(chat, bot.id) \
             and not is_user_admin(chat, msg.from_user.id):
@@ -187,9 +220,9 @@ def rest_msg(bot, update):
 
 @run_async
 @user_not_admin
-def rest_media(bot, update):
-    msg = update.effective_message
-    chat = update.effective_chat
+def rest_media(bot: Bot, update: Update):
+    msg = update.effective_message  # type: Optional[Message]
+    chat = update.effective_chat  # type: Optional[Chat]
     if sql.is_restr_locked(chat.id, "media") \
             and can_delete(chat, bot.id) \
             and not is_user_admin(chat, msg.from_user.id):
@@ -203,9 +236,9 @@ def rest_media(bot, update):
 
 @run_async
 @user_not_admin
-def rest_other(bot, update):
-    msg = update.effective_message
-    chat = update.effective_chat
+def rest_other(bot: Bot, update: Update):
+    msg = update.effective_message  # type: Optional[Message]
+    chat = update.effective_chat  # type: Optional[Chat]
     if sql.is_restr_locked(chat.id, "other") \
             and can_delete(chat, bot.id) \
             and not is_user_admin(chat, msg.from_user.id):
@@ -219,13 +252,12 @@ def rest_other(bot, update):
 
 @run_async
 @user_not_admin
-def rest_previews(bot, update):
-    msg = update.effective_message
-    chat = update.effective_chat
+def rest_previews(bot: Bot, update: Update):
+    msg = update.effective_message  # type: Optional[Message]
+    chat = update.effective_chat  # type: Optional[Chat]
     if sql.is_restr_locked(chat.id, "previews") \
             and can_delete(chat, bot.id) \
             and not is_user_admin(chat, msg.from_user.id):
-        msg.delete()
         bot.restrict_chat_member(chat.id, msg.from_user.id,
                                  can_send_messages=True,
                                  can_send_media_messages=True,
@@ -235,8 +267,8 @@ def rest_previews(bot, update):
 
 @run_async
 @user_admin
-def list_locks(bot, update):
-    chat = update.effective_chat
+def list_locks(bot: Bot, update: Update):
+    chat = update.effective_chat  # type: Optional[Chat]
 
     locks = sql.get_locks(chat.id)
     restr = sql.get_restr(chat.id)
@@ -252,8 +284,10 @@ def list_locks(bot, update):
                    "\n - video = {}" \
                    "\n - contact = {}" \
                    "\n - photo = {}" \
-                   "\n - gif = {}".format(locks.sticker, locks.audio, locks.voice, locks.document,
-                                          locks.video, locks.contact, locks.photo, locks.gif)
+                   "\n - gif = {}" \
+                   "\n - url = {}" \
+                   "\n - bots = {}".format(locks.sticker, locks.audio, locks.voice, locks.document,
+                                           locks.video, locks.contact, locks.photo, locks.gif, locks.url, locks.bots)
         if restr:
             res += "\n - messages = {}" \
                    "\n - media = {}" \
@@ -281,10 +315,10 @@ Locks can be used to restrict a group's users.
 eg:
 Locking urls will auto-delete all messages with urls which haven't been whitelisted, locking stickers will delete all \
 stickers, etc.
+Locking bots will stop non-admins from adding bots to the chat.
 """
 
 __name__ = "Locks"
-
 
 GIF = Filters.document & CustomFilters.mime_type("video/mp4")
 OTHER = Filters.game | Filters.sticker | GIF
@@ -311,6 +345,7 @@ CONTACT_HANDLER = MessageHandler(Filters.contact, del_contact)
 PHOTO_HANDLER = MessageHandler(Filters.photo, del_photo)
 GIF_HANDLER = MessageHandler(GIF, del_gif)
 URL_HANDLER = MessageHandler(Filters.entity(MessageEntity.URL), del_url)
+BOT_HANDLER = MessageHandler(Filters.status_update.new_chat_members, remove_bot)
 
 dispatcher.add_handler(LOCK_HANDLER)
 dispatcher.add_handler(UNLOCK_HANDLER)
@@ -320,8 +355,9 @@ dispatcher.add_handler(LOCKED_HANDLER)
 dispatcher.add_handler(REST_MSG_HANDLER, REST_GROUP)
 dispatcher.add_handler(REST_MEDIA_HANDLER, REST_GROUP)
 dispatcher.add_handler(REST_OTHERS_HANDLER, REST_GROUP)
-# dispatcher.add_handler(REST_PREVIEWS_HANDLER, REST_GROUP) # NOTE: disable, checking for URL's will trigger all urls,
+dispatcher.add_handler(REST_PREVIEWS_HANDLER, REST_GROUP)
 
+dispatcher.add_handler(GIF_HANDLER, PERM_GROUP)  # be at top, before doc handler
 dispatcher.add_handler(STICKER_HANDLER, PERM_GROUP)
 dispatcher.add_handler(AUDIO_HANDLER, PERM_GROUP)
 dispatcher.add_handler(VOICE_HANDLER, PERM_GROUP)
@@ -329,5 +365,5 @@ dispatcher.add_handler(DOCUMENT_HANDLER, PERM_GROUP)
 dispatcher.add_handler(VIDEO_HANDLER, PERM_GROUP)
 dispatcher.add_handler(CONTACT_HANDLER, PERM_GROUP)
 dispatcher.add_handler(PHOTO_HANDLER, PERM_GROUP)
-dispatcher.add_handler(GIF_HANDLER, PERM_GROUP)
 dispatcher.add_handler(URL_HANDLER, PERM_GROUP)
+dispatcher.add_handler(BOT_HANDLER, PERM_GROUP)
