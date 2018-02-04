@@ -129,10 +129,16 @@ def ungban(bot, update, args):
 
         try:
             member = bot.get_chat_member(chat_id, user_id)
+            from tg_bot import LOGGER
+
+            LOGGER.info(f"{member.status}")
             if member.status == 'kicked':
                 bot.unban_chat_member(chat_id, user_id)
 
         except BadRequest as excp:
+            from tg_bot import LOGGER
+
+            LOGGER.exception("WTH IS THIS '{}'".format(excp.message))
             if excp.message == "User is an administrator of the chat":
                 pass
             elif excp.message == "Chat not found":
