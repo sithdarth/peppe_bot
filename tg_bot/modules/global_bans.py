@@ -8,7 +8,7 @@ from telegram.utils.helpers import escape_markdown
 
 import tg_bot.modules.sql.global_bans_sql as sql
 from tg_bot import dispatcher, OWNER_ID, SUDO_USERS, SUPPORT_USERS, STRICT_GBAN
-from tg_bot.modules.helper_funcs.chat_status import can_restrict, user_not_admin, user_admin
+from tg_bot.modules.helper_funcs.chat_status import user_not_admin, user_admin
 from tg_bot.modules.helper_funcs.cust_filters import CustomFilters
 from tg_bot.modules.helper_funcs.extraction import extract_user, extract_user_and_text
 from tg_bot.modules.helper_funcs.misc import send_to_list
@@ -241,6 +241,10 @@ def __user_info__(user_id):
 
 def __migrate__(old_chat_id, new_chat_id):
     sql.migrate_chat(old_chat_id, new_chat_id)
+
+
+def __chat_settings__(chat_id, user_id):
+    return "This chat is enforcing *gbans*: `{}`.".format(sql.does_chat_gban(chat_id))
 
 
 __help__ = """

@@ -126,7 +126,13 @@ def pin(bot: Bot, update: Update, args: List[str]):
 @user_admin
 def unpin(bot: Bot, update: Update):
     chat_id = update.effective_chat.id
-    bot.unpinChatMessage(chat_id)
+    try:
+        bot.unpinChatMessage(chat_id)
+    except BadRequest as excp:
+        if excp.message == "Chat_not_modified":
+            pass
+        else:
+            raise
 
 
 @run_async
@@ -159,6 +165,10 @@ def adminlist(bot: Bot, update: Update):
         text += "\n - {}".format(name)
 
     update.effective_message.reply_text(text, parse_mode=ParseMode.MARKDOWN)
+
+
+def __chat_settings__(chat_id, user_id):
+    return "You are *admin*: `{}`".format(dispatcher.bot.get_chat_member(chat_id, user_id).status in ("administrator", "creator"))
 
 
 __help__ = """

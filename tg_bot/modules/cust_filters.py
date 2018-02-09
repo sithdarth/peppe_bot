@@ -68,6 +68,10 @@ def filters(bot: Bot, update: Update):
     if len(extracted) >= 2:
         offset = len(extracted[1]) - len(msg.text)  # set correct offset relative to command + notename
         content, buttons = button_markdown_parser(extracted[1], entities=msg.parse_entities(), offset=offset)
+        content = content.strip()
+        if not content:
+            msg.reply_text("There is no note message - You can't JUST have buttons, you need a message to go with it!")
+            return
 
     elif msg.reply_to_message and msg.reply_to_message.sticker:
         content = msg.reply_to_message.sticker.file_id
@@ -194,6 +198,11 @@ def __stats__():
 
 def __migrate__(old_chat_id, new_chat_id):
     sql.migrate_chat(old_chat_id, new_chat_id)
+
+
+def __chat_settings__(chat_id, user_id):
+    cust_filters = sql.get_chat_filters(chat_id)
+    return "There are `{}` custom filters here.".format(len(cust_filters))
 
 
 __help__ = """

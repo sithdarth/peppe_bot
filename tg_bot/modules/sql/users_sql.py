@@ -105,7 +105,7 @@ def update_user(user_id, username, chat_id=None, chat_name=None):
 
 def get_userid_by_name(username):
     try:
-        return SESSION.query(Users).filter(func.lower(Users.username) == username.lower()).first()
+        return SESSION.query(Users).filter(func.lower(Users.username) == username.lower()).all()
     finally:
         SESSION.close()
 
@@ -156,8 +156,10 @@ def migrate_chat(old_chat_id, new_chat_id):
     with INSERTION_LOCK:
         chat = SESSION.query(Chats).get(str(old_chat_id))
         if chat:
-            chat.chat_id = new_chat_id
+            chat.chat_id = str(new_chat_id)
             SESSION.add(chat)
+
+        SESSION.flush()
 
         chat_members = SESSION.query(ChatMembers).filter(ChatMembers.chat == str(old_chat_id)).all()
         for member in chat_members:
