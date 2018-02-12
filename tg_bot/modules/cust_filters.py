@@ -2,7 +2,7 @@ import re
 from typing import Optional
 
 import telegram
-from telegram import ParseMode, InlineKeyboardMarkup, InlineKeyboardButton, Message, Chat
+from telegram import ParseMode, InlineKeyboardMarkup, Message, Chat
 from telegram import Update, Bot
 from telegram.error import BadRequest
 from telegram.ext import CommandHandler, MessageHandler, DispatcherHandlerStop, run_async, Filters
@@ -11,6 +11,7 @@ from telegram.utils.helpers import escape_markdown
 from tg_bot import dispatcher, OWNER_USERNAME
 from tg_bot.modules.helper_funcs.chat_status import user_admin
 from tg_bot.modules.helper_funcs.extraction import extract_text
+from tg_bot.modules.helper_funcs.misc import build_keyboard
 from tg_bot.modules.helper_funcs.string_handling import split_quotes, button_markdown_parser
 from tg_bot.modules.sql import cust_filters_sql as sql
 
@@ -164,9 +165,9 @@ def reply_filter(bot: Bot, update: Update):
                 message.reply_video(filt.reply)
             elif filt.has_markdown:
                 buttons = sql.get_buttons(chat.id, filt.keyword)
-                keyb = [[InlineKeyboardButton(btn.name, url=btn.url)] for btn in buttons]
-
+                keyb = build_keyboard(buttons)
                 keyboard = InlineKeyboardMarkup(keyb)
+
                 try:
                     message.reply_text(filt.reply, parse_mode=ParseMode.MARKDOWN,
                                        disable_web_page_preview=True,
@@ -210,9 +211,9 @@ __help__ = """
 
 *Admin only:*
  - /filter <keyword> <reply message>: add a filter to this chat. The bot will now reply that message whenever 'keyword'\
-  is mentioned. If you reply to a sticker with a keyword, the bot will reply with that sticker. NOTE: all filter \
-  keywords are in lowercase. If you want your keyword to be a sentence, use quotes. eg: /filter "hey there" How you \
-  doin?
+is mentioned. If you reply to a sticker with a keyword, the bot will reply with that sticker. NOTE: all filter \
+keywords are in lowercase. If you want your keyword to be a sentence, use quotes. eg: /filter "hey there" How you \
+doin?
  - /stop <filter keyword>: stop that filter.
 """
 
