@@ -2,14 +2,15 @@ from typing import Union, List, Optional
 
 from future.utils import string_types
 from telegram import ParseMode, Update, Bot, Chat
-from telegram.ext import CommandHandler, RegexHandler
+from telegram.ext import CommandHandler, RegexHandler, Filters
 
-from tg_bot import dispatcher, NO_LOAD, LOAD
+from tg_bot import dispatcher
+from tg_bot.modules.helper_funcs.misc import is_module_loaded
 
 FILENAME = __name__.rsplit(".", 1)[-1]
 
 # If module is due to be loaded, then setup all the magical handlers
-if (not LOAD or FILENAME in LOAD) and FILENAME not in NO_LOAD:
+if is_module_loaded(FILENAME):
     from tg_bot.modules.helper_funcs.chat_status import user_admin
     from telegram.ext.dispatcher import run_async
 
@@ -129,7 +130,7 @@ if (not LOAD or FILENAME in LOAD) and FILENAME not in NO_LOAD:
         return build_curr_disabled(chat_id)
 
 
-    __name__ = "Command disabling"
+    __mod_name__ = "Command disabling"
 
     __help__ = """
  - /cmds: check the current status of disabled commands
@@ -140,10 +141,10 @@ if (not LOAD or FILENAME in LOAD) and FILENAME not in NO_LOAD:
  - /listcmds: list all possible toggleable commands
     """
 
-    DISABLE_HANDLER = CommandHandler("disable", disable, pass_args=True)
-    ENABLE_HANDLER = CommandHandler("enable", enable, pass_args=True)
-    COMMANDS_HANDLER = CommandHandler("cmds", commands)
-    TOGGLE_HANDLER = CommandHandler("listcmds", list_cmds)
+    DISABLE_HANDLER = CommandHandler("disable", disable, pass_args=True, filters=Filters.group)
+    ENABLE_HANDLER = CommandHandler("enable", enable, pass_args=True, filters=Filters.group)
+    COMMANDS_HANDLER = CommandHandler("cmds", commands, filters=Filters.group)
+    TOGGLE_HANDLER = CommandHandler("listcmds", list_cmds, filters=Filters.group)
 
     dispatcher.add_handler(DISABLE_HANDLER)
     dispatcher.add_handler(ENABLE_HANDLER)

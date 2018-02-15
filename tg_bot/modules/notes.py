@@ -142,16 +142,17 @@ def save(bot: Bot, update: Update):
 
         note_data = markdown_note.strip()
         if not note_data:
-            update.effective_message.reply_text("You can't save an empty message! If you added a button, you MUST "
-                                                "have some text in the message too.")
+            msg.reply_text("You can't save an empty message! If you added a button, you MUST "
+                           "have some text in the message too.")
             return
 
         sql.add_note_to_db(chat_id, note_name, note_data, is_reply=False, buttons=buttons)
 
-        update.effective_message.reply_text("Yas! Added " + note_name)
+        msg.reply_text(
+            "Yas! Added {note_name}.\nGet it with /get {note_name}, or #{note_name}".format(note_name=note_name))
 
     else:
-        update.effective_message.reply_text("Dude, there's no note")
+        msg.reply_text("Dude, there's no note")
 
 
 @run_async
@@ -236,7 +237,7 @@ A button can be added to a botton by using standard markdown link syntax - the l
  - /clear <notename>: clear note with this name
 """
 
-__name__ = "Notes"
+__mod_name__ = "Notes"
 
 GET_HANDLER = CommandHandler("get", cmd_get, pass_args=True)
 HASH_GET_HANDLER = RegexHandler(r"^#[^\s]+", hash_get)
