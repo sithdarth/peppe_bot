@@ -15,6 +15,18 @@ from tg_bot.modules.disable import DisableAbleCommandHandler
 from tg_bot.modules.helper_funcs.filters import CustomFilters
 from tg_bot.modules.helper_funcs.extraction import extract_user
 
+apiurl = "http://api.urbandictionary.com/v0/define"
+
+message = """
+Definition for <b>%(word)s</b> by %(author)s:
+%(definition)s
+Examples:
+<i>
+%(example)s
+</i>
+<a href="%(permalink)s">Link to definition on Urban dictionary</a>
+"""
+
 RUN_STRINGS = (
     "Where do you think you're going?",
     "Huh? what? did they get away?",
@@ -334,6 +346,23 @@ Note: this message has had markdown disabled, to allow you to see what the chara
 def stats(bot: Bot, update: Update):
     update.effective_message.reply_text("Current stats:\n" + "\n".join([mod.__stats__() for mod in STATS]))
 
+def get_definition(term, number):
+    definition = get(apiurl, params={ "term": term }).json() 
+    if definition["result_type"] == "exact":
+        deftxt = definition["list"][int(number) - 1] 
+        deftxt = escape_definition(deftxt) 
+        return message % deftxt, len(definition["list"]) 
+    else:
+        raise IndexError("Not found")
+
+def ud(bot:Bot, update:Update, args):
+    entity =  " ".join(args)
+    try :
+        define = get_definition(entity, 1) 
+    except IndexError:
+        update.message.reply_text("Nothing found!")
+    else:
+    update.message.reply_text(definition)
 
 # /ip is for private use
 __help__ = """
@@ -343,6 +372,7 @@ __help__ = """
  - /time <place>: gives the local time at the given place.
  - /markdownhelp: quick summary of how markdown works in telegram - can only be called in private chats.
  - /info: get information about a user.
+ - /ud : get definition from Urban Dictionary
 """
 
 __mod_name__ = "Misc"
@@ -351,7 +381,7 @@ ID_HANDLER = DisableAbleCommandHandler("id", get_id, pass_args=True)
 IP_HANDLER = CommandHandler("ip", get_bot_ip, filters=Filters.chat(OWNER_ID))
 
 TIME_HANDLER = CommandHandler("time", get_time, pass_args=True)
-
+UD_HANDLER = DisableAbleCommandHandler("ud", ud, pass_args=True)
 RUNS_HANDLER = DisableAbleCommandHandler("runs", runs)
 SLAP_HANDLER = DisableAbleCommandHandler("slap", slap, pass_args=True)
 INFO_HANDLER = DisableAbleCommandHandler("info", info, pass_args=True)
@@ -361,6 +391,7 @@ MD_HELP_HANDLER = CommandHandler("markdownhelp", markdown_help, filters=Filters.
 
 STATS_HANDLER = CommandHandler("stats", stats, filters=CustomFilters.sudo_filter)
 
+dispatcher.add_handler(UD_HANDLER)
 dispatcher.add_handler(ID_HANDLER)
 dispatcher.add_handler(IP_HANDLER)
 dispatcher.add_handler(TIME_HANDLER)
