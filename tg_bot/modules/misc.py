@@ -40,7 +40,6 @@ RUN_STRINGS = (
     "You're gonna regret that...",
     "You could also try /kickme, I hear that's fun.",
     "Go bother someone else, no-one here cares.",
-    "I hear @MSFJarvis wants to hear more about you.",
     "Please, remind me how much I care?",
     "I'd run faster if I were you.",
     "That's definitely the droid we're looking for.",
@@ -347,10 +346,9 @@ def stats(bot: Bot, update: Update):
     update.effective_message.reply_text("Current stats:\n" + "\n".join([mod.__stats__() for mod in STATS]))
 
 def get_definition(term, number):
-    definition = get(apiurl, params={ "term": term }).json() 
+    definition = requests.get(apiurl, params={ "term": term }).json() 
     if definition["result_type"] == "exact":
         deftxt = definition["list"][int(number) - 1] 
-        deftxt = escape_definition(deftxt) 
         return message % deftxt, len(definition["list"]) 
     else:
         raise IndexError("Not found")
@@ -362,7 +360,7 @@ def ud(bot:Bot, update:Update, args):
     except IndexError:
         update.message.reply_text("Nothing found!")
     else:
-    update.message.reply_text(definition)
+        bot.send_message(update.message.chat_id, text = define, parse_mode= ParseMode.HTML)
 
 # /ip is for private use
 __help__ = """
@@ -386,7 +384,7 @@ RUNS_HANDLER = DisableAbleCommandHandler("runs", runs)
 SLAP_HANDLER = DisableAbleCommandHandler("slap", slap, pass_args=True)
 INFO_HANDLER = DisableAbleCommandHandler("info", info, pass_args=True)
 
-ECHO_HANDLER = CommandHandler("echo", echo, filters=Filters.user(OWNER_ID))
+ECHO_HANDLER = CommandHandler("echo", echo, filters=CustomFilters.sudo_filter)
 MD_HELP_HANDLER = CommandHandler("markdownhelp", markdown_help, filters=Filters.private)
 
 STATS_HANDLER = CommandHandler("stats", stats, filters=CustomFilters.sudo_filter)
