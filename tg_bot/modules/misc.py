@@ -2,30 +2,18 @@ import json
 import random
 from datetime import datetime
 from typing import Optional, List
-
+import pyowm
 import requests
 from telegram import Message, Chat, Update, Bot, MessageEntity
 from telegram import ParseMode
 from telegram.ext import CommandHandler, run_async, Filters
 from telegram.utils.helpers import escape_markdown
-
+import urbandictionary as ud
 from tg_bot import dispatcher, OWNER_ID, SUDO_USERS, SUPPORT_USERS, WHITELIST_USERS, BAN_STICKER
 from tg_bot.__main__ import STATS, USER_INFO
 from tg_bot.modules.disable import DisableAbleCommandHandler
 from tg_bot.modules.helper_funcs.filters import CustomFilters
 from tg_bot.modules.helper_funcs.extraction import extract_user
-
-apiurl = "http://api.urbandictionary.com/v0/define"
-
-message = """
-Definition for <b>%(word)s</b> by %(author)s:
-%(definition)s
-Examples:
-<i>
-%(example)s
-</i>
-<a href="%(permalink)s">Link to definition on Urban dictionary</a>
-"""
 
 RUN_STRINGS = (
     "Where do you think you're going?",
@@ -345,24 +333,28 @@ Note: this message has had markdown disabled, to allow you to see what the chara
 def stats(bot: Bot, update: Update):
     update.effective_message.reply_text("Current stats:\n" + "\n".join([mod.__stats__() for mod in STATS]))
 
-def get_definition(term, number):
-    definition = requests.get(apiurl, params={ "term": term }).json() 
-    if definition["result_type"] == "exact":
-        deftxt = definition["list"][int(number) - 1] 
-        return message % deftxt, len(definition["list"]) 
-    else:
-        raise IndexError("Not found")
-
-def ud(bot:Bot, update:Update, args):
+def udict(bot:Bot, update:Update, args):
     entity =  " ".join(args)
-    try :
-        define = get_definition(entity, 1) 
-    except IndexError:
-        update.message.reply_text("Nothing found!")
-    else:
-        bot.send_message(update.message.chat_id, text = define, parse_mode= ParseMode.HTML)
+    defs = ud.define(entity)
+    required_definition = defs[0]
+    #definition = required_definition.definition
+    #example = required_definition.example
+    #word = required_definition.word
+    #update.message.reply_text("{} : {} . Example : {}".format(word[0], definition[0], example[0]))
+    update.message.reply_text(required_definition)
 
-# /ip is for private use
+def get_weather(bot: Bot, update: Update, args):
+    zone = " ".join(args)
+    owm = pyowm.OWM('5aa1128687accc3b7c3e2d29c2752787')
+    weather = owm.weather_at_place(zone)
+    w = weather.get_weather()
+    weather_c = w.get_temperature('celsius')
+    weather_f = w.get_temperature('fahrenheit')
+    wind_speed = w.get_wind()
+    humidity =  w.get_humidity()
+    status = w.get_detailed_status()
+    update.message.reply_text("It's currently {}°C/{}°F in {}. Feels {}. Humidity Level : {}. Wind Speed : {}".format(weather_c['temp'], weather_f['temp'], zone, status, humidity, wind_speed['speed']))
+ #/ip is for private use
 __help__ = """
  - /id: get the current group id. If used by replying to a message, gets that user's id.
  - /runs: reply a random string from an array of replies.
@@ -379,12 +371,12 @@ ID_HANDLER = DisableAbleCommandHandler("id", get_id, pass_args=True)
 IP_HANDLER = CommandHandler("ip", get_bot_ip, filters=Filters.chat(OWNER_ID))
 
 TIME_HANDLER = CommandHandler("time", get_time, pass_args=True)
-UD_HANDLER = DisableAbleCommandHandler("ud", ud, pass_args=True)
+UD_HANDLER = DisableAbleCommandHandler("ud", udict, pass_args=True)
 RUNS_HANDLER = DisableAbleCommandHandler("runs", runs)
 SLAP_HANDLER = DisableAbleCommandHandler("slap", slap, pass_args=True)
 INFO_HANDLER = DisableAbleCommandHandler("info", info, pass_args=True)
-
-ECHO_HANDLER = CommandHandler("echo", echo, filters=CustomFilters.sudo_filter)
+WEATHER_HANDLER = DisableAbleCommandHandler("weather" , get_weather, pass_args=True)
+ECHO_HANDLER = CommandHandler("echo", echo, filters=Filters.user(OWNER_ID))
 MD_HELP_HANDLER = CommandHandler("markdownhelp", markdown_help, filters=Filters.private)
 
 STATS_HANDLER = CommandHandler("stats", stats, filters=CustomFilters.sudo_filter)
@@ -399,3 +391,4 @@ dispatcher.add_handler(INFO_HANDLER)
 dispatcher.add_handler(ECHO_HANDLER)
 dispatcher.add_handler(MD_HELP_HANDLER)
 dispatcher.add_handler(STATS_HANDLER)
+dispatcher.add_handler(WEATHER_HANDLER)
