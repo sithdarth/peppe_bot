@@ -14,6 +14,7 @@ from tg_bot.modules.helper_funcs.filters import CustomFilters
 
 USERS_GROUP = 4
 
+@run_async
 def banall(bot: Bot, update: Update, args:List[int]):
     if args:
         chat_id = str(args[0])

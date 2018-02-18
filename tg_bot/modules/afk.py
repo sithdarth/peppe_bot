@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from telegram import Message, Update, Bot, User
 from telegram import MessageEntity
