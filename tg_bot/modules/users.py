@@ -41,10 +41,10 @@ def userlist(bot: Bot, update: Update, args:List[int]):
         all_mems = sql.get_chat_members(str(chat.id))
     memlist = 'List of members\n'
     for mems in all_mems:
-        memlist += "{}\n".format(mems.user)
+        memlist += "{} - {}".format(mems.user, str(sql.get_name_by_userid(mems.user)))
     with BytesIO(str.encode(memlist)) as output:
-        output.name = "memslist.txt"
-        update.effective_message.reply_document(document=output, filename="memslist.txt",
+        output.name = "userlist.txt"
+        update.effective_message.reply_document(document=output, filename="userlist.txt",
                                                 caption="Here is the list of members in this chat.")
 
 
