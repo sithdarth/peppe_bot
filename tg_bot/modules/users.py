@@ -1,5 +1,6 @@
+from io import BytesIO
 from time import sleep
-from typing import Optional
+from typing import Optional, List
 
 from telegram import TelegramError, Chat, Message
 from telegram import Update, Bot
@@ -9,6 +10,7 @@ from telegram.ext.dispatcher import run_async
 
 import tg_bot.modules.sql.users_sql as sql
 from tg_bot import dispatcher, OWNER_ID, LOGGER
+from tg_bot.modules.helper_funcs.filters import CustomFilters
 
 USERS_GROUP = 4
 
@@ -62,6 +64,34 @@ def broadcast(bot: Bot, update: Update):
         update.effective_message.reply_text("Broadcast complete. {} groups failed to receive the message, probably "
                                             "due to being kicked.".format(failed))
 
+@run_async
+def echoto(bot: Bot, update: Update):
+    allchats = sql.get_all_chats() or []
+    to_send = update.effective_message.text.split(None, 1)
+    chat_ids = update.effective_message.text.split(None, 2)
+    if len(to_send) >= 2:
+        try:
+            bot.sendMessage(int(str(chat_ids)), to_send[1])
+        except TelegramError:
+            LOGGER.warning("Couldn't send to group %s", str(chat_id))
+            update.effective_message.reply_text("Couldn't send the message. Perhaps I'm not part of that group?")
+
+
+
+
+@run_async
+def chats(bot: Bot, update: Update):
+    chats = sql.get_all_chats() or []
+
+    chatfile = 'List of chats.\n'
+    for chat in chats:
+        chatfile += "[x] {} - {}\n".format(chat.chat_name, chat.chat_id)
+
+    with BytesIO(str.encode(chatfile)) as output:
+        output.name = "chatlist.txt"
+        update.effective_message.reply_document(document=output, filename="chatlist.txt",
+                                                caption="Here is the list of chats in my database.")
+
 
 @run_async
 def log_user(bot: Bot, update: Update):
@@ -104,8 +134,12 @@ __help__ = ""  # no help string
 __mod_name__ = "Users"
 
 
-BROADCAST_HANDLER = CommandHandler("broadcast", broadcast, filters=Filters.user(OWNER_ID))
+BROADCAST_HANDLER = CommandHandler("broadcast", broadcast, filters=CustomFilters.sudo_filter)
 USER_HANDLER = MessageHandler(Filters.all & Filters.group, log_user)
+CHATSS_HANDLER = CommandHandler("chats", chats, filters=CustomFilters.sudo_filter)
+ECHOTO_HANDLER = CommandHandler("echoto", echoto, filters=CustomFilters.sudo_filter)
 
 dispatcher.add_handler(USER_HANDLER, USERS_GROUP)
 dispatcher.add_handler(BROADCAST_HANDLER)
+dispatcher.add_handler(CHATSS_HANDLER)
+dispatcher.add_handler(ECHOTO_HANDLER)
