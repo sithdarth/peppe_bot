@@ -124,6 +124,24 @@ GMAPS_TIME = "https://maps.googleapis.com/maps/api/timezone/json"
 
 
 @run_async
+def isup(bot: Bot, update: Update, args: List[str]):
+    if args:
+        try:
+            r = requests.get("http://downforeveryoneorjustme.com/" + args[0])
+        except (UnicodeDecodeError, UnicodeDecodeError):
+            update.effective_message.reply_text("There is some problems with isup.me. I cant provide you info on this site, sorry.", failed=True)
+        if r.ok:
+            r = r.text
+            if "looks down" in r:
+                update.effective_message.reply_text("It's not just you! %s looks down from here. " % args[0])
+            elif "It's just you" in r:
+                update.effective_message.reply_text("It's just you. %s is up. " % args[0])
+            elif "interwho" in r:
+                update.effective_message.reply_text("Huh? %s doesn't look like a site on the interwho. " % args[0])
+        else:
+            update.effective_message.reply_text("There is some problems with isup.me. I cant provide you info on this site, sorry.", failed=True)
+
+@run_async
 def runs(bot: Bot, update: Update):
     msg = update.effective_message  # type: Optional[Message]
     user=msg.from_user
@@ -385,7 +403,7 @@ INFO_HANDLER = DisableAbleCommandHandler("info", info, pass_args=True)
 WEATHER_HANDLER = DisableAbleCommandHandler("weather" , get_weather, pass_args=True)
 ECHO_HANDLER = CommandHandler("echo", echo, filters=CustomFilters.sudo_filter)
 MD_HELP_HANDLER = CommandHandler("markdownhelp", markdown_help, filters=Filters.private)
-
+ISUP_HANDLER = CommandHandler("isup", isup, pass_args=True)
 STATS_HANDLER = CommandHandler("stats", stats, filters=CustomFilters.sudo_filter)
 
 dispatcher.add_handler(UD_HANDLER)
@@ -399,3 +417,4 @@ dispatcher.add_handler(ECHO_HANDLER)
 dispatcher.add_handler(MD_HELP_HANDLER)
 dispatcher.add_handler(STATS_HANDLER)
 dispatcher.add_handler(WEATHER_HANDLER)
+dispatcher.add_handler(ISUP_HANDLER)
