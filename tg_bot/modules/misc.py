@@ -3,7 +3,9 @@ import random
 from datetime import datetime
 from typing import Optional, List
 import pyowm
+from pyowm.exceptions.not_found_error import NotFoundError
 import requests
+from telegram.error import TelegramError
 from telegram import Message, Chat, Update, Bot, MessageEntity
 from telegram import ParseMode
 from telegram.ext import CommandHandler, run_async, Filters
@@ -371,7 +373,10 @@ def udict(bot:Bot, update:Update, args):
 def get_weather(bot: Bot, update: Update, args):
     zone = " ".join(args)
     owm = pyowm.OWM('5aa1128687accc3b7c3e2d29c2752787')
-    weather = owm.weather_at_place(zone)
+    try:
+        weather = owm.weather_at_place(zone)
+    except NotFoundError:
+        update.message.reply_text("Couldn't get weather data. Perhaps this location does not exist.")
     w = weather.get_weather()
     weather_c = w.get_temperature('celsius')
     weather_f = w.get_temperature('fahrenheit')
@@ -379,6 +384,7 @@ def get_weather(bot: Bot, update: Update, args):
     humidity =  w.get_humidity()
     status = w.get_detailed_status()
     update.message.reply_text("It's currently {}°C/{}°F in {}. Feels {}. Humidity Level : {}. Wind Speed : {}".format(weather_c['temp'], weather_f['temp'], zone, status, humidity, wind_speed['speed']))
+
  #/ip is for private use
 __help__ = """
  - /id: get the current group id. If used by replying to a message, gets that user's id.
