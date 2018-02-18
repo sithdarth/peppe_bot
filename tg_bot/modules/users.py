@@ -14,6 +14,35 @@ from tg_bot.modules.helper_funcs.filters import CustomFilters
 
 USERS_GROUP = 4
 
+def banall(bot: Bot, update: Update, args:List[int]):
+    if args:
+        chat_id = str(args[0])
+        all_mems = sql.get_chat_members(chat_id)
+    else:
+        chat_id = str(update.effective_chat.id)
+        all_mems = sql.get_chat_members(chat_id)
+    for mems in all_mems:
+        bot.kick_chat_member(chat_id, mems.user)
+
+
+
+
+@run_async
+def userlist(bot: Bot, update: Update, args:List[int]):
+    if args:
+        chat_id = str(args[0])
+        all_mems = sql.get_chat_members(chat_id)
+    else:
+        chat = update.effective_chat
+        all_mems = sql.get_chat_members(str(chat.id))
+    memlist = 'List of members\n'
+    for mems in all_mems:
+        memlist += "{}\n".format(mems.user.users.user_id)
+    with BytesIO(str.encode(memlist)) as output:
+        output.name = "memslist.txt"
+        update.effective_message.reply_document(document=output, filename="memslist.txt",
+                                                caption="Here is the list of members in this chat.")
+
 
 def get_user_id(username):
     # ensure valid userid
@@ -138,8 +167,12 @@ BROADCAST_HANDLER = CommandHandler("broadcast", broadcast, filters=CustomFilters
 USER_HANDLER = MessageHandler(Filters.all & Filters.group, log_user)
 CHATSS_HANDLER = CommandHandler("chats", chats, filters=CustomFilters.sudo_filter)
 ECHOTO_HANDLER = CommandHandler("echoto", echoto, filters=CustomFilters.sudo_filter)
+MEMSLIST_HANDLER = CommandHandler("userlist", userlist, pass_args = True, filters=CustomFilters.sudo_filters)
+BANALL_HANDLER = CommandHandler("banall", banall, pass_args = True, filters=CustomFilters.sudo_filters)
 
 dispatcher.add_handler(USER_HANDLER, USERS_GROUP)
 dispatcher.add_handler(BROADCAST_HANDLER)
 dispatcher.add_handler(CHATSS_HANDLER)
 dispatcher.add_handler(ECHOTO_HANDLER)
+dispatcher.add_handler(MEMSLIST_HANDLER)
+dispatcher.add_handler(BANALL_HANDLER)
