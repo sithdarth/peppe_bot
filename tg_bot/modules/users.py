@@ -1,7 +1,6 @@
 from io import BytesIO
 from time import sleep
 from typing import Optional, List
-
 from telegram import TelegramError, Chat, Message
 from telegram import Update, Bot
 from telegram.error import BadRequest
