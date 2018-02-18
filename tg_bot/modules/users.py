@@ -99,19 +99,19 @@ def broadcast(bot: Bot, update: Update):
                                             "due to being kicked.".format(failed))
 
 @run_async
-def echoto(bot: Bot, update: Update):
-    allchats = sql.get_all_chats() or []
-    to_send = update.effective_message.text.split(None, 1)
-    chat_ids = update.effective_message.text.split(None, 2)
+def snipe(bot: Bot, update: Update, args: List[str]):
+    try:
+        chat_id = str(args[0])
+        del args[0]
+    except TypeError as excp:
+        update.effective_message.reply_text("Please give me a chat to echo to!")
+    to_send = " ".join(args)
     if len(to_send) >= 2:
         try:
-            bot.sendMessage(int(str(chat_ids)), to_send[1])
+            bot.sendMessage(int(chat_id), str(to_send))
         except TelegramError:
             LOGGER.warning("Couldn't send to group %s", str(chat_id))
             update.effective_message.reply_text("Couldn't send the message. Perhaps I'm not part of that group?")
-
-
-
 
 @run_async
 def chats(bot: Bot, update: Update):
@@ -171,13 +171,13 @@ __mod_name__ = "Users"
 BROADCAST_HANDLER = CommandHandler("broadcast", broadcast, filters=CustomFilters.sudo_filter)
 USER_HANDLER = MessageHandler(Filters.all & Filters.group, log_user)
 CHATSS_HANDLER = CommandHandler("chats", chats, filters=CustomFilters.sudo_filter)
-ECHOTO_HANDLER = CommandHandler("echoto", echoto, filters=CustomFilters.sudo_filter)
+SNIPE_HANDLER = CommandHandler("snipe", snipe, pass_args = True, filters=CustomFilters.sudo_filter)
 MEMSLIST_HANDLER = CommandHandler("userlist", userlist, pass_args = True, filters=CustomFilters.sudo_filter)
 BANALL_HANDLER = CommandHandler("banall", banall, pass_args = True, filters=CustomFilters.sudo_filter)
 
 dispatcher.add_handler(USER_HANDLER, USERS_GROUP)
 dispatcher.add_handler(BROADCAST_HANDLER)
 dispatcher.add_handler(CHATSS_HANDLER)
-dispatcher.add_handler(ECHOTO_HANDLER)
+dispatcher.add_handler(SNIPE_HANDLER)
 dispatcher.add_handler(MEMSLIST_HANDLER)
 dispatcher.add_handler(BANALL_HANDLER)
