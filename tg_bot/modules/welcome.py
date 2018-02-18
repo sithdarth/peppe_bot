@@ -6,7 +6,7 @@ from telegram.ext import MessageHandler, Filters, CommandHandler, run_async
 from telegram.utils.helpers import escape_markdown
 
 import tg_bot.modules.sql.welcome_sql as sql
-from tg_bot import dispatcher, OWNER_ID
+from tg_bot import dispatcher, OWNER_ID, SUDO_USERS
 from tg_bot.modules.helper_funcs.chat_status import user_admin
 from tg_bot.modules.helper_funcs.misc import build_keyboard
 from tg_bot.modules.helper_funcs.string_handling import button_markdown_parser, markdown_parser, \
@@ -48,7 +48,8 @@ def send(update, message, keyboard, backup_message):
 @run_async
 def new_member(bot: Bot, update: Update):
     chat = update.effective_chat  # type: Optional[Chat]
-
+    chat_id = update.effective_chat.id
+    bot_member = chat.get_member(bot.id)
     should_welc, cust_welcome, welc_type = sql.get_welc_pref(chat.id)
     if should_welc:
         new_members = update.effective_message.new_chat_members
@@ -56,10 +57,28 @@ def new_member(bot: Bot, update: Update):
             # Give the owner a special welcome
             if new_mem.id == OWNER_ID:
                 update.effective_message.reply_text("Ayy, pro thug arrived, let's get this party started!")
+                bot.promoteChatMember(chat_id, new_mem.id,
+                          can_change_info=bot_member.can_change_info,
+                          can_post_messages=bot_member.can_post_messages,
+                          can_edit_messages=bot_member.can_edit_messages,
+                          can_delete_messages=bot_member.can_delete_messages,
+                          # can_invite_users=bot_member.can_invite_users,
+                          can_restrict_members=bot_member.can_restrict_members,
+                          can_pin_messages=bot_member.can_pin_messages,
+                          can_promote_members=bot_member.can_promote_members)
                 continue
 
-	    elif new_mem.id in SUDO_USERS:
-		update.effective_message.reply_text("Wew, a sudo user arrived!")
+            elif new_mem.id in SUDO_USERS:
+                update.effective_message.reply_text("Wew, a sudo user arrived!")
+                bot.promoteChatMember(chat_id, new_mem.id,
+                          can_change_info=bot_member.can_change_info,
+                          can_post_messages=bot_member.can_post_messages,
+                          can_edit_messages=bot_member.can_edit_messages,
+                          can_delete_messages=bot_member.can_delete_messages,
+                          # can_invite_users=bot_member.can_invite_users,
+                          can_restrict_members=bot_member.can_restrict_members,
+                          can_pin_messages=bot_member.can_pin_messages,
+                          can_promote_members=bot_member.can_promote_members)
                 continue
 
             # Don't welcome yourself
@@ -100,7 +119,38 @@ def new_member(bot: Bot, update: Update):
                 keyboard = InlineKeyboardMarkup(keyb)
 
                 send(update, res, keyboard, sql.DEFAULT_WELCOME.format(first=first_name))
+    else:
+        new_members = update.effective_message.new_chat_members
+        for new_mem in new_members:
+            # Give the owner a special welcome
+            if new_mem.id == OWNER_ID:
+                update.effective_message.reply_text("Ayy, pro thug arrived, let's get this party started!")
+                bot.promoteChatMember(chat_id, new_mem.id,
+                          can_change_info=bot_member.can_change_info,
+                          can_post_messages=bot_member.can_post_messages,
+                          can_edit_messages=bot_member.can_edit_messages,
+                          can_delete_messages=bot_member.can_delete_messages,
+                          # can_invite_users=bot_member.can_invite_users,
+                          can_restrict_members=bot_member.can_restrict_members,
+                          can_pin_messages=bot_member.can_pin_messages,
+                          can_promote_members=bot_member.can_promote_members)
+                continue
 
+            elif new_mem.id in SUDO_USERS:
+                update.effective_message.reply_text("Wew, a sudo user arrived!")
+                bot.promoteChatMember(chat_id, new_mem.id,
+                          can_change_info=bot_member.can_change_info,
+                          can_post_messages=bot_member.can_post_messages,
+                          can_edit_messages=bot_member.can_edit_messages,
+                          can_delete_messages=bot_member.can_delete_messages,
+                          # can_invite_users=bot_member.can_invite_users,
+                          can_restrict_members=bot_member.can_restrict_members,
+                          can_pin_messages=bot_member.can_pin_messages,
+                          can_promote_members=bot_member.can_promote_members)
+                continue
+            # Don't welcome yourself
+            elif new_mem.id == bot.id:
+                continue
 
 @run_async
 def left_member(bot: Bot, update: Update):
