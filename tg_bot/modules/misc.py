@@ -125,8 +125,15 @@ GMAPS_TIME = "https://maps.googleapis.com/maps/api/timezone/json"
 
 @run_async
 def runs(bot: Bot, update: Update):
-    update.effective_message.reply_text(random.choice(RUN_STRINGS))
-
+    msg = update.effective_message  # type: Optional[Message]
+    user=msg.from_user
+    user_id = user.id
+    if (user_id == OWNER_ID):
+        update.effective_message.reply_text("Of course master, you may do whatever you wish.")
+    elif (user_id in SUDO_USERS):
+        update.effective_message.reply_text("Pls nu run from me master ;_;")
+    else:
+        update.effective_message.reply_text(random.choice(RUN_STRINGS))
 
 @run_async
 def slap(bot: Bot, update: Update, args: List[str]):
