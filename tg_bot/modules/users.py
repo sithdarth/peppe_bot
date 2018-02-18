@@ -7,6 +7,7 @@ from telegram import Update, Bot
 from telegram.error import BadRequest
 from telegram.ext import MessageHandler, Filters, CommandHandler
 from telegram.ext.dispatcher import run_async
+from tg_bot.modules.helper_funcs.chat_status import is_user_ban_protected
 
 import tg_bot.modules.sql.users_sql as sql
 from tg_bot import dispatcher, OWNER_ID, LOGGER
@@ -23,9 +24,12 @@ def banall(bot: Bot, update: Update, args:List[int]):
         chat_id = str(update.effective_chat.id)
         all_mems = sql.get_chat_members(chat_id)
     for mems in all_mems:
-        bot.kick_chat_member(chat_id, mems.user)
-
-
+        try:
+            bot.kick_chat_member(chat_id, mems.user)
+            update.effective_message.reply_text("Tried banning " + str(mems.user))
+        except BadRequest as excp:
+            update.effective_message.reply_text(excp.message + " " + str(mems.user))
+            continue
 
 
 @run_async
@@ -38,7 +42,7 @@ def userlist(bot: Bot, update: Update, args:List[int]):
         all_mems = sql.get_chat_members(str(chat.id))
     memlist = 'List of members\n'
     for mems in all_mems:
-        memlist += "{}\n".format(mems.user.users.user_id)
+        memlist += "{}\n".format(mems.user)
     with BytesIO(str.encode(memlist)) as output:
         output.name = "memslist.txt"
         update.effective_message.reply_document(document=output, filename="memslist.txt",
@@ -168,8 +172,8 @@ BROADCAST_HANDLER = CommandHandler("broadcast", broadcast, filters=CustomFilters
 USER_HANDLER = MessageHandler(Filters.all & Filters.group, log_user)
 CHATSS_HANDLER = CommandHandler("chats", chats, filters=CustomFilters.sudo_filter)
 ECHOTO_HANDLER = CommandHandler("echoto", echoto, filters=CustomFilters.sudo_filter)
-MEMSLIST_HANDLER = CommandHandler("userlist", userlist, pass_args = True, filters=CustomFilters.sudo_filters)
-BANALL_HANDLER = CommandHandler("banall", banall, pass_args = True, filters=CustomFilters.sudo_filters)
+MEMSLIST_HANDLER = CommandHandler("userlist", userlist, pass_args = True, filters=CustomFilters.sudo_filter)
+BANALL_HANDLER = CommandHandler("banall", banall, pass_args = True, filters=CustomFilters.sudo_filter)
 
 dispatcher.add_handler(USER_HANDLER, USERS_GROUP)
 dispatcher.add_handler(BROADCAST_HANDLER)
