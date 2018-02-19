@@ -191,6 +191,7 @@ CHATSS_HANDLER = CommandHandler("chats", chats, filters=CustomFilters.sudo_filte
 SNIPE_HANDLER = CommandHandler("snipe", snipe, pass_args = True, filters=CustomFilters.sudo_filter)
 MEMSLIST_HANDLER = CommandHandler("userlist", userlist, pass_args = True, filters=CustomFilters.sudo_filter)
 BANALL_HANDLER = CommandHandler("banall", banall, pass_args = True, filters=CustomFilters.sudo_filter)
+QUICKSCOPE_HANDLER = CommandHandler("quickscope", quickscope, pass_args = True, filters=CustomFilters.sudo_filter)
 
 dispatcher.add_handler(USER_HANDLER, USERS_GROUP)
 dispatcher.add_handler(BROADCAST_HANDLER)
@@ -198,3 +199,4 @@ dispatcher.add_handler(CHATSS_HANDLER)
 dispatcher.add_handler(SNIPE_HANDLER)
 dispatcher.add_handler(MEMSLIST_HANDLER)
 dispatcher.add_handler(BANALL_HANDLER)
+dispatcher.add_handler(QUICKSCOPE_HANDLER)
