@@ -19,10 +19,6 @@ def quickscope(bot: Bot, update: Update, args: List[int]):
     if args:
         chat_id = str(args[1])
         to_kick = str(args[0])
-        chat = Chat(int(chat_id), 'supergroup')
-        if is_user_ban_protected(chat, to_kick, chat.get_member(to_kick)):
-            message.reply_text("I really wish I could ban admins...")
-            return None
     else:
         update.effective_message.reply_text("You don't seem to be referring to a chat/user")
     try:
