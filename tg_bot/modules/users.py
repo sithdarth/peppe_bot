@@ -15,7 +15,25 @@ from tg_bot.modules.helper_funcs.filters import CustomFilters
 USERS_GROUP = 4
 
 @run_async
-def banall(bot: Bot, update: Update, args:List[int]):
+def quickscope(bot: Bot, update: Update, args: List[int]):
+    if args:
+        chat_id = str(args[1])
+        to_kick = str(args[0])
+        chat = Chat(int(chat_id), 'supergroup')
+        if is_user_ban_protected(chat, to_kick, chat.get_member(to_kick)):
+            message.reply_text("I really wish I could ban admins...")
+            return None
+    else:
+        update.effective_message.reply_text("You don't seem to be referring to a chat/user")
+    try:
+        bot.kick_chat_member(chat_id, to_kick)
+        update.effective_message.reply_text("Attempted banning " + to_kick + " from" + chat_id)
+    except BadRequest as excp:
+        update.effective_message.reply_text(excp.message + " " + to_kick)
+
+
+@run_async
+def banall(bot: Bot, update: Update, args: List[int]):
     if args:
         chat_id = str(args[0])
         all_mems = sql.get_chat_members(chat_id)
